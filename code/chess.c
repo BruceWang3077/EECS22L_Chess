@@ -1,8 +1,8 @@
-#include "struct.h"
+#include "structures.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
-void initializeBoard(struct Board *board){
+void initialize(struct Board *board){
     // Initialize the pieces for the white player
     for (int i = 0; i < 8; i++)
     {
