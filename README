@@ -1,0 +1,5 @@
+Minor Carlsen(Team 21) Project 1: Chess Game
+Authors: Anthony Flores, Chenyu Wang, Davis Nguyen, Nathan Bae, Timothy Chan
+Verison: Alpha 
+
+Hello! This contains the chess game made by Team 21. The program only currently supports player vs computer but we will add more features by the final version. Our game is still very buggy but can support basic functions of displaying the board, the movement of pieces from user input, and updating the board after each move is made. After installing the program, you should be able to run a game of chess against a computer. Firstly it will ask for you to choose a side and print a board with all the pieces. Then after you make a move, the computer will decide on a move and then the board will update. This will continue until a player's king is in checkmate. (DISCLAIMER: Status check and endgame function has not been implemented yet)

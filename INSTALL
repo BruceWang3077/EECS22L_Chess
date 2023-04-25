@@ -1,0 +1,1 @@
+For installation please type "tar -xvzf Chess_Alpha_src.tar.gz, then cd Chess_Alpha_src, then  type make in order to invoke the makefile. Running the program only requires "./test" into the terminal.
