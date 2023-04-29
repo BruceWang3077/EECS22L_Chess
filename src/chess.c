@@ -2,8 +2,65 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-void initialize(struct Board *board)
+int reload(FILE *log, struct Board* board){
+    char start_char;
+    char f1,r1,f2,r2;
+    log = fopen("bin/log/chess_game.txt", "a+"); // Open file in read mode
+    // Check if file exists
+    if (log == NULL)
+    {
+        printf("File does not exist.\n");
+        return 0;
+    }
+
+    // Read and print all lines
+    struct Move *move = malloc(sizeof(struct Move));
+    move->location_dest = malloc(sizeof(struct Location));
+    move->location_src = malloc(sizeof(struct Location));
+    if (move == NULL || move->location_dest == NULL || move->location_src == NULL)
+    {
+        printf("Error: failed to create move .\n");
+        exit(1);
+    }
+    while (fscanf(log, "%c %c%c%c%c\n", &start_char, &r1, &f1, &r2, &f2) == 5)
+    {
+        move->location_src->file = f1-'0';
+        move->location_src->rank = r1-'0';
+        move->location_dest->file = f2-'0';
+        move->location_dest->rank = r2 -'0';
+    }
+    enum Player next=(start_char=='B')?BLACK:WHITE;
+    board->current_player=next;
+
+    fclose(log); // Close file
+    return 0;
+}
+void get_user_move(struct Move *move)
 {
+    printf("Enter your move (e.g. e2e4): ");
+    char input[10];
+    scanf("%s", input);
+    int src_file = input[0] - 'a';
+    int src_rank = input[1] - '1';
+    int dest_file = input[2] - 'a';
+    int dest_rank = input[3] - '1';
+    move->location_src = malloc(sizeof(struct Location));
+    move->location_dest = malloc(sizeof(struct Location));
+    move->location_src->file = src_file;
+    move->location_src->rank = src_rank;
+    move->location_dest->file = dest_file;
+    move->location_dest->rank = dest_rank;
+}
+void initialize(struct Board *board)
+{   board->current_player=WHITE;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            board->board[i][j] = (struct Piece *)malloc(sizeof(struct Piece));
+            // my_board->board[i][j]->name[0] = (char *)malloc(4 * sizeof(char));
+        }
+    }
     // Initialize the pieces for the white player
     // for (int i = 0; i < 8; i++)
     // {
@@ -232,6 +289,6 @@ void recordMove(struct Move *move, enum Player curr_player, FILE *fp)
     int srcfile = move->location_src->file;
     int destrank = move->location_dest->rank;
     int destfile = move->location_dest->file;
-    fprintf(fp, "%d%d%d%d \n",srcrank,srcfile,destrank,destfile);
+    fprintf(fp, "%d%d%d%d \n", srcrank, srcfile, destrank, destfile);
     printf("move Recorded\n");
 }

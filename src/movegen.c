@@ -1,95 +1,34 @@
 #include "structures.h"
 
-int straight_moves_count(struct Board *position, int dir, int rank, int file)
-{
-	int count = 0;
-	int i;
-	if (dir == 0)
-	{ // direction goes forward
-		for (i = 1; i <= 7; i++)
-		{
-			if ((rank + i) < 8)
-			{
-				if (position->board[rank + i][file]->player == EMPTY_Player)
-				{
-					count++;
-				}
-				else
-				{
-					break; // exit loop if a non-empty square is encountered
-				}
-			}
-			else
-			{
-				break; // exit loop if outside the bounds of the chessboard
-			}
-		}
-	}
-	if (dir == 1)
-	{ // direction goes backward
-		for (i = 1; i <= 7; i++)
-		{
-			if ((rank - i) >= 0)
-			{
-				if (position->board[rank - i][file]->player == EMPTY_Player)
-				{
-					count++;
-				}
-				else
-				{
-					break; // exit loop if a non-empty square is encountered
-				}
-			}
-			else
-			{
-				break; // exit loop if outside the bounds of the chessboard
-			}
-		}
-	}
 
-	if (dir == 2)
-	{ // direction goes left
-		for (i = 1; i <= 7; i++)
-		{
-			if ((file - i) >= 0)
-			{
-				if (position->board[rank][file - i]->player == EMPTY_Player)
-				{
-					count++;
-				}
-				else
-				{
-					break; // exit loop if a non-empty square is encountered
-				}
-			}
-			else
-			{
-				break; // exit loop if outside the bounds of the chessboard
-			}
-		}
-	}
-	if (dir == 3)
-	{ // direction goes right
-		for (i = 1; i <= 7; i++)
-		{
-			if ((file + i) < 8)
-			{
-				if (position->board[rank][file + i]->player == EMPTY_Player)
-				{
-					count++;
-				}
-				else
-				{
-					break; // exit loop if a non-empty square is encountered
-				}
-			}
-			else
-			{
-				break; // exit loop if outside the bounds of the chessboard
-			}
-		}
-	}
-	return count;
+void gentlemoves(int srcrank, int srcfile, int destrank, int destfile, struct Moves *p_list)
+{
+	p_list->moveList[p_list->size].location_src->rank = srcrank;
+	p_list->moveList[p_list->size].location_src->file = srcfile;
+	p_list->moveList[p_list->size].location_dest->rank = destrank;
+	p_list->moveList[p_list->size].location_dest->file = destfile;
+	p_list->size++;
+}
+
+void attackmoves(int srcrank, int srcfile, int destrank, int destfile, struct Moves *p_list, struct Board *position)
+{
+	p_list->moveList[p_list->size].location_src->rank = srcrank;
+	p_list->moveList[p_list->size].location_src->file = srcfile;
+	p_list->moveList[p_list->size].location_dest->rank = destrank;
+	p_list->moveList[p_list->size].location_dest->file = destfile;
+	p_list->moveList[p_list->size].captured_piece->player = position->board[destrank][destfile]->player;
+	p_list->moveList[p_list->size].captured_piece->t_piece = position->board[destrank][destfile]->t_piece;
+	p_list->size++;
+}
+
+void castlingmoves(int srcrank, int srcfile, int destrank, int destfile, struct Moves *p_list, struct Board *position)
+{
+	p_list->moveList[p_list->size].location_src->rank = srcrank;
+	p_list->moveList[p_list->size].location_src->file = srcfile;
+	p_list->moveList[p_list->size].location_dest->rank = destrank;
+	p_list->moveList[p_list->size].location_dest->file = destfile;
+	p_list->moveList[p_list->size].castling = true;
+	p_list->size++;
 }
 
 void generatemoves(struct Board *position, struct Moves *p_list, enum Player playerturn)
@@ -99,7 +38,6 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 	int movecount = 0;
 	int i;
 	int j;
-	int count;
 	int rank;
 	int file;
 	int dir;
@@ -129,22 +67,13 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank + 1][file]->player == EMPTY_Player)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank + 1;
-								p_list->moveList[p_list->size].location_dest->file = file;
-								p_list->size++;
-
+								gentlemoves(rank, file, rank + 1, file, p_list);
 								// for white pawn moving up twice, checks if second square is also empty
 								if (piece->moved == false && (rank + 2) < 8)
 								{
 									if (position->board[rank + 2][file]->player == EMPTY_Player)
 									{
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = rank + 2;
-										p_list->moveList[p_list->size].location_dest->file = file;
-										p_list->size++;
+										gentlemoves(rank, file, rank + 2, file, p_list);
 									}
 								}
 							}
@@ -154,13 +83,7 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank + 1][file + 1]->player == BLACK)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank + 1;
-								p_list->moveList[p_list->size].location_dest->file = file + 1;
-								p_list->moveList[p_list->size].captured_piece->player = BLACK;
-								p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + 1][file + 1]->t_piece;
-								p_list->size++;
+								attackmoves(rank, file, rank + 1, file + 1, p_list, position);
 							}
 						}
 						// for white pawn left diagonal capture move, also check is move is on board
@@ -168,13 +91,7 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank + 1][file - 1]->player == BLACK)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank + 1;
-								p_list->moveList[p_list->size].location_dest->file = file - 1;
-								p_list->moveList[p_list->size].captured_piece->player = BLACK;
-								p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + 1][file - 1]->t_piece;
-								p_list->size++;
+								attackmoves(rank, file, rank + 1, file - 1, p_list, position);
 							}
 						}
 						// checks for possible enpassant move right and left
@@ -214,86 +131,37 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 					// possible moves for white rook
 					if (piece->t_piece == ROOK)
 					{ // possible moves for white rook no attack
-						for (dir = 0; dir < 4; dir++)
-						{
-							movecount = straight_moves_count(position, dir, rank, file);
-							for (c = 1; c <= movecount; c++)
-							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
 
-								switch (dir)
-								{
-								case 0:
-									p_list->moveList[p_list->size].location_dest->rank = rank + c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 1:
-									p_list->moveList[p_list->size].location_dest->rank = rank - c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 2:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - c;
-									break;
-								case 3:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + c;
-									break;
+						// Checking all possible horizontal and vertical moves in the four directions: up, down, left, and right
+						for (i = -1; i <= 1; i++)
+						{ // i = -1 for up direction, i = 1 for down direction, i = 0 for horizontal direction
+							for (j = -1; j <= 1; j++)
+							{ // j = -1 for left direction, j = 1 for right direction, j = 0 for vertical direction
+								if ((i != 0 && j != 0) || (i == 0 && j == 0))
+								{ // Skip diagonal moves and the current position
+									continue;
 								}
-
-								p_list->size++;
-							}
-							if ((rank + movecount + 1) < 8)
-							{ // Finds white rook forward attack move
-								if (position->board[rank + movecount + 1][file]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank + movecount + 1;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + movecount + 1][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((rank - (movecount + 1)) >= 0)
-							{ // Finds white rook backward attack move
-								if (position->board[rank - (movecount + 1)][file]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank - (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file - (movecount + 1)) >= 0)
-							{ // Finds white rook left attack move
-								if (position->board[rank][file - (movecount + 1)]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file - (movecount + 1)]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file + (movecount + 1)) < 8)
-							{ // Finds white rook right attack move
-								if (position->board[rank][file + movecount + 1]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + movecount + 1;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file + movecount + 1]->t_piece;
-									p_list->size++;
+								r = rank + i;
+								f = file + j;
+								while (r >= 0 && r < 8 && f >= 0 && f < 8)
+								{ // Continue moving horizontally or vertically until the edge of the board is reached
+									if (position->board[r][f]->player == EMPTY_Player)
+									{ // If the square is empty
+										// Add the move to the list of legal moves
+										gentlemoves(rank, file, r, f, p_list);
+									}
+									else
+									{
+										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
+										if (position->board[r][f]->player == BLACK)
+										{
+											attackmoves(rank, file, r, f, p_list, position);
+										}
+										// Stop checking further in this direction since the rook can't move through pieces
+										break;
+									}
+									r += i;
+									f += j;
 								}
 							}
 						}
@@ -315,24 +183,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
 										// Add the move to the list of legal moves
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									else
 									{
 										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 										if (position->board[r][f]->player == BLACK)
 										{
-											p_list->moveList[p_list->size].location_src->rank = rank;
-											p_list->moveList[p_list->size].location_src->file = file;
-											p_list->moveList[p_list->size].location_dest->rank = r;
-											p_list->moveList[p_list->size].location_dest->file = f;
-											p_list->moveList[p_list->size].captured_piece->player = BLACK;
-											p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-											p_list->size++;
+											attackmoves(rank, file, r, f, p_list, position);
 										}
 										// Stop checking further in this direction since the bishop can't move through pieces
 										break;
@@ -359,24 +217,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 								if (position->board[r][f]->player == EMPTY_Player)
 								{ // If the square is empty
 									// Add the move to the list of legal moves
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = r;
-									p_list->moveList[p_list->size].location_dest->file = f;
-									p_list->size++;
+									gentlemoves(rank, file, r, f, p_list);
 								}
 								else
 								{
 									// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 									if (position->board[r][f]->player == BLACK)
 									{
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->moveList[p_list->size].captured_piece->player = BLACK;
-										p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-										p_list->size++;
+										attackmoves(rank, file, r, f, p_list, position);
 									}
 								}
 							}
@@ -385,91 +233,40 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 					// possible white queen moves
 					if (piece->t_piece == QUEEN)
 					{
-						// straight moves
-						for (dir = 0; dir < 4; dir++)
-						{
-							movecount = straight_moves_count(position, dir, rank, file);
-							for (c = 1; c <= movecount; c++)
-							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-
-								switch (dir)
-								{
-								case 0:
-									p_list->moveList[p_list->size].location_dest->rank = rank + c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 1:
-									p_list->moveList[p_list->size].location_dest->rank = rank - c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 2:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - c;
-									break;
-								case 3:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + c;
-									break;
+						// Checking all possible horizontal and vertical moves in the four directions: up, down, left, and right
+						for (i = -1; i <= 1; i++)
+						{ // i = -1 for up direction, i = 1 for down direction, i = 0 for horizontal direction
+							for (j = -1; j <= 1; j++)
+							{ // j = -1 for left direction, j = 1 for right direction, j = 0 for vertical direction
+								if ((i != 0 && j != 0) || (i == 0 && j == 0))
+								{ // Skip diagonal moves and the current position
+									continue;
 								}
-
-								p_list->size++;
-							}
-							if ((rank + movecount + 1) < 8)
-							{ // Finds white queen forward attack move
-								if (position->board[rank + movecount + 1][file]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank + movecount + 1;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + movecount + 1][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((rank - (movecount + 1)) >= 0)
-							{ // Finds white queen backward attack move
-								if (position->board[rank - (movecount + 1)][file]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank - (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file - (movecount + 1)) >= 0)
-							{ // Finds white queen left attack move
-								if (position->board[rank][file - (movecount + 1)]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file - (movecount + 1)]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file + (movecount + 1)) < 8)
-							{ // Finds white queen right attack move
-								if (position->board[rank][file + movecount + 1]->player == BLACK)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + movecount + 1;
-									p_list->moveList[p_list->size].captured_piece->player = BLACK;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file + movecount + 1]->t_piece;
-									p_list->size++;
+								r = rank + i;
+								f = file + j;
+								while (r >= 0 && r < 8 && f >= 0 && f < 8)
+								{ // Continue moving horizontally or vertically until the edge of the board is reached
+									if (position->board[r][f]->player == EMPTY_Player)
+									{ // If the square is empty
+										// Add the move to the list of legal moves
+										gentlemoves(rank, file, r, f, p_list);
+									}
+									else
+									{
+										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
+										if (position->board[r][f]->player == BLACK)
+										{
+											attackmoves(rank, file, r, f, p_list, position);
+										}
+										// Stop checking further in this direction since the rook can't move through pieces
+										break;
+									}
+									r += i;
+									f += j;
 								}
 							}
 						}
-						movecount = 0;
+
 						// Checking all possible diagonal moves in the four diagonal directions: top-left, top-right, bottom-left, bottom-right
 						for (i = -1; i <= 1; i += 2)
 						{ // i = -1 for top directions, i = 1 for bottom directions
@@ -482,24 +279,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
 										// Add the move to the list of legal moves
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									else
 									{
 										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 										if (position->board[r][f]->player == BLACK)
 										{
-											p_list->moveList[p_list->size].location_src->rank = rank;
-											p_list->moveList[p_list->size].location_src->file = file;
-											p_list->moveList[p_list->size].location_dest->rank = r;
-											p_list->moveList[p_list->size].location_dest->file = f;
-											p_list->moveList[p_list->size].captured_piece->player = BLACK;
-											p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-											p_list->size++;
+											attackmoves(rank, file, r, f, p_list, position);
 										}
 										// Stop checking further in this direction since the queen can't move through pieces
 										break;
@@ -529,21 +316,31 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 								{
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									if (position->board[r][f]->player == BLACK)
 									{ // If the square contains opponents piece
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->moveList[p_list->size].captured_piece->player = BLACK;
-										p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-										p_list->size++;
+										attackmoves(rank, file, r, f, p_list, position);
+									}
+								}
+							}
+						}
+						if (piece->moved == false)
+						{ // white castling right
+							if ((position->board[rank][file + 2]->player == EMPTY_Player) && (position->board[rank][file + 1]->player == EMPTY_Player))
+							{
+								if ((position->board[rank][file + 3]->player != EMPTY_Player) && (position->board[rank][file + 3]->moved == false))
+								{
+									castlingmoves(rank, file, rank, file + 2, p_list, position);
+								}
+							} // white castling left
+							if ((position->board[rank][file - 1]->player == EMPTY_Player) && (position->board[rank][file - 2]->player == EMPTY_Player))
+							{
+								if ((position->board[rank][file - 3]->player == EMPTY_Player) && position->board[rank][file - 4]->player != EMPTY_Player)
+								{
+									if (position->board[rank][file - 4]->moved == false)
+									{
+										castlingmoves(rank, file, rank, file - 2, p_list, position);
 									}
 								}
 							}
@@ -563,22 +360,13 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank - 1][file]->player == EMPTY_Player)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank - 1;
-								p_list->moveList[p_list->size].location_dest->file = file;
-								p_list->size++;
-
+								gentlemoves(rank, file, rank - 1, file, p_list);
 								// for black pawn moving down twice, checks if second square is also empty
 								if (piece->moved == false && (rank - 2) >= 0)
 								{
 									if (position->board[rank - 2][file]->player == EMPTY_Player)
 									{
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = rank - 2;
-										p_list->moveList[p_list->size].location_dest->file = file;
-										p_list->size++;
+										gentlemoves(rank, file, rank - 2, file, p_list);
 									}
 								}
 							}
@@ -588,13 +376,7 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank - 1][file + 1]->player == WHITE)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank - 1;
-								p_list->moveList[p_list->size].location_dest->file = file + 1;
-								p_list->moveList[p_list->size].captured_piece->player = WHITE;
-								p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - 1][file + 1]->t_piece;
-								p_list->size++;
+								attackmoves(rank, file, rank - 1, file + 1, p_list, position);
 							}
 						}
 						// for black pawn left diagonal capture move, also check if move is on board
@@ -602,13 +384,7 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 						{
 							if (position->board[rank - 1][file - 1]->player == WHITE)
 							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-								p_list->moveList[p_list->size].location_dest->rank = rank - 1;
-								p_list->moveList[p_list->size].location_dest->file = file - 1;
-								p_list->moveList[p_list->size].captured_piece->player = WHITE;
-								p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - 1][file - 1]->t_piece;
-								p_list->size++;
+								attackmoves(rank, file, rank - 1, file - 1, p_list, position);
 							}
 						}
 						// checks for possible en passant move right and left
@@ -648,86 +424,38 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 					// possible moves for black rook
 					if (piece->t_piece == ROOK)
 					{
-						for (dir = 0; dir < 4; dir++)
-						{
-							movecount = straight_moves_count(position, dir, rank, file);
-							for (c = 1; c <= movecount; c++)
-							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
+						movecount = 0;
 
-								switch (dir)
-								{
-								case 0:
-									p_list->moveList[p_list->size].location_dest->rank = rank - c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 1:
-									p_list->moveList[p_list->size].location_dest->rank = rank + c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 2:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - c;
-									break;
-								case 3:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + c;
-									break;
+						// Checking all possible horizontal and vertical moves in the four directions: up, down, left, and right
+						for (i = -1; i <= 1; i++)
+						{ // i = -1 for up direction, i = 1 for down direction, i = 0 for horizontal direction
+							for (j = -1; j <= 1; j++)
+							{ // j = -1 for left direction, j = 1 for right direction, j = 0 for vertical direction
+								if ((i != 0 && j != 0) || (i == 0 && j == 0))
+								{ // Skip diagonal moves and the current position
+									continue;
 								}
-
-								p_list->size++;
-							}
-							if ((rank - (movecount + 1)) >= 0)
-							{ // Finds black rook forward attack move
-								if (position->board[rank - (movecount + 1)][file]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank - (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((rank + (movecount + 1)) < 8)
-							{ // Finds black rook backward attack move
-								if (position->board[rank + (movecount + 1)][file]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank + (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file - (movecount + 1)) >= 0)
-							{ // Finds black rook left attack move
-								if (position->board[rank][file - (movecount + 1)]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file - (movecount + 1)]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file + (movecount + 1)) < 8)
-							{ // Finds black rook right attack move
-								if (position->board[rank][file + (movecount + 1)]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file + (movecount + 1)]->t_piece;
-									p_list->size++;
+								r = rank + i;
+								f = file + j;
+								while (r >= 0 && r < 8 && f >= 0 && f < 8)
+								{ // Continue moving horizontally or vertically until the edge of the board is reached
+									if (position->board[r][f]->player == EMPTY_Player)
+									{ // If the square is empty
+										// Add the move to the list of legal moves
+										gentlemoves(rank, file, r, f, p_list);
+									}
+									else
+									{
+										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
+										if (position->board[r][f]->player == WHITE)
+										{
+											attackmoves(rank, file, r, f, p_list, position);
+										}
+										// Stop checking further in this direction since the rook can't move through pieces
+										break;
+									}
+									r += i;
+									f += j;
 								}
 							}
 						}
@@ -749,24 +477,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
 										// Add the move to the list of legal moves
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									else
 									{
 										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 										if (position->board[r][f]->player == WHITE)
 										{
-											p_list->moveList[p_list->size].location_src->rank = rank;
-											p_list->moveList[p_list->size].location_src->file = file;
-											p_list->moveList[p_list->size].location_dest->rank = r;
-											p_list->moveList[p_list->size].location_dest->file = f;
-											p_list->moveList[p_list->size].captured_piece->player = WHITE;
-											p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-											p_list->size++;
+											attackmoves(rank, file, r, f, p_list, position);
 										}
 										// Stop checking further in this direction since the bishop can't move through pieces
 										break;
@@ -793,24 +511,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 								if (position->board[r][f]->player == EMPTY_Player)
 								{ // If the square is empty
 									// Add the move to the list of legal moves
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = r;
-									p_list->moveList[p_list->size].location_dest->file = f;
-									p_list->size++;
+									gentlemoves(rank, file, r, f, p_list);
 								}
 								else
 								{
 									// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 									if (position->board[r][f]->player == WHITE)
 									{
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->moveList[p_list->size].captured_piece->player = WHITE;
-										p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-										p_list->size++;
+										attackmoves(rank, file, r, f, p_list, position);
 									}
 								}
 							}
@@ -819,91 +527,39 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 					// possible black queen moves
 					if (piece->t_piece == QUEEN)
 					{
-						// checking straight moves
-						for (dir = 0; dir < 4; dir++)
-						{
-							movecount = straight_moves_count(position, dir, rank, file);
-							for (c = 1; c <= movecount; c++)
-							{
-								p_list->moveList[p_list->size].location_src->rank = rank;
-								p_list->moveList[p_list->size].location_src->file = file;
-
-								switch (dir)
-								{
-								case 0:
-									p_list->moveList[p_list->size].location_dest->rank = rank - c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 1:
-									p_list->moveList[p_list->size].location_dest->rank = rank + c;
-									p_list->moveList[p_list->size].location_dest->file = file;
-									break;
-								case 2:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - c;
-									break;
-								case 3:
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + c;
-									break;
+						// Checking all possible horizontal and vertical moves in the four directions: up, down, left, and right
+						for (i = -1; i <= 1; i++)
+						{ // i = -1 for up direction, i = 1 for down direction, i = 0 for horizontal direction
+							for (j = -1; j <= 1; j++)
+							{ // j = -1 for left direction, j = 1 for right direction, j = 0 for vertical direction
+								if ((i != 0 && j != 0) || (i == 0 && j == 0))
+								{ // Skip diagonal moves and the current position
+									continue;
 								}
-
-								p_list->size++;
-							}
-							if ((rank - (movecount + 1)) >= 0)
-							{ // Finds black rook forward attack move
-								if (position->board[rank - (movecount + 1)][file]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank - (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank - (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((rank + (movecount + 1)) < 8)
-							{ // Finds black rook backward attack move
-								if (position->board[rank + (movecount + 1)][file]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank + (movecount + 1);
-									p_list->moveList[p_list->size].location_dest->file = file;
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank + (movecount + 1)][file]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file - (movecount + 1)) >= 0)
-							{ // Finds black rook left attack move
-								if (position->board[rank][file - (movecount + 1)]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file - (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file - (movecount + 1)]->t_piece;
-									p_list->size++;
-								}
-							}
-							if ((file + (movecount + 1)) < 8)
-							{ // Finds white rook right attack move
-								if (position->board[rank][file + (movecount + 1)]->player == WHITE)
-								{
-									p_list->moveList[p_list->size].location_src->rank = rank;
-									p_list->moveList[p_list->size].location_src->file = file;
-									p_list->moveList[p_list->size].location_dest->rank = rank;
-									p_list->moveList[p_list->size].location_dest->file = file + (movecount + 1);
-									p_list->moveList[p_list->size].captured_piece->player = WHITE;
-									p_list->moveList[p_list->size].captured_piece->t_piece = position->board[rank][file + (movecount + 1)]->t_piece;
-									p_list->size++;
+								r = rank + i;
+								f = file + j;
+								while (r >= 0 && r < 8 && f >= 0 && f < 8)
+								{ // Continue moving horizontally or vertically until the edge of the board is reached
+									if (position->board[r][f]->player == EMPTY_Player)
+									{ // If the square is empty
+										// Add the move to the list of legal moves
+										gentlemoves(rank, file, r, f, p_list);
+									}
+									else
+									{
+										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
+										if (position->board[r][f]->player == WHITE)
+										{
+											attackmoves(rank, file, r, f, p_list, position);
+										}
+										// Stop checking further in this direction since the rook can't move through pieces
+										break;
+									}
+									r += i;
+									f += j;
 								}
 							}
 						}
-						movecount = 0;
 						// Checking all possible diagonal moves in the four diagonal directions: top-left, top-right, bottom-left, bottom-right
 						for (i = -1; i <= 1; i += 2)
 						{ // i = -1 for top directions, i = 1 for bottom directions
@@ -916,24 +572,14 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
 										// Add the move to the list of legal moves
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									else
 									{
 										// If there is a piece on the square, check if it's an opponent's piece and add the move if it is
 										if (position->board[r][f]->player == WHITE)
 										{
-											p_list->moveList[p_list->size].location_src->rank = rank;
-											p_list->moveList[p_list->size].location_src->file = file;
-											p_list->moveList[p_list->size].location_dest->rank = r;
-											p_list->moveList[p_list->size].location_dest->file = f;
-											p_list->moveList[p_list->size].captured_piece->player = WHITE;
-											p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-											p_list->size++;
+											attackmoves(rank, file, r, f, p_list, position);
 										}
 										// Stop checking further in this direction since the bishop can't move through pieces
 										break;
@@ -963,21 +609,34 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 								{
 									if (position->board[r][f]->player == EMPTY_Player)
 									{ // If the square is empty
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->size++;
+										gentlemoves(rank, file, r, f, p_list);
 									}
 									if (position->board[r][f]->player == WHITE)
 									{ // If the square contains opponents piece
-										p_list->moveList[p_list->size].location_src->rank = rank;
-										p_list->moveList[p_list->size].location_src->file = file;
-										p_list->moveList[p_list->size].location_dest->rank = r;
-										p_list->moveList[p_list->size].location_dest->file = f;
-										p_list->moveList[p_list->size].captured_piece->player = WHITE;
-										p_list->moveList[p_list->size].captured_piece->t_piece = position->board[r][f]->t_piece;
-										p_list->size++;
+										attackmoves(rank, file, r, f, p_list, position);
+									}
+								}
+							}
+						}
+						if (piece->moved == false)
+						{ // black castling right
+							if ((rank >= 0) && (rank < 8) && ((file - 4) >= 0) && ((file + 3) < 8))
+							{
+								if ((position->board[rank][file + 2]->player == EMPTY_Player) && (position->board[rank][file + 1]->player == EMPTY_Player))
+								{
+									if ((position->board[rank][file + 3]->player != EMPTY_Player) && (position->board[rank][file + 3]->moved == false))
+									{
+										castlingmoves(rank, file, rank, file + 2, p_list, position);
+									}
+								} // black castling left
+								if ((position->board[rank][file - 1]->player == EMPTY_Player) && (position->board[rank][file - 2]->player == EMPTY_Player))
+								{
+									if ((position->board[rank][file - 3]->player == EMPTY_Player) && position->board[rank][file - 4]->player != EMPTY_Player)
+									{
+										if (position->board[rank][file - 4]->moved == false)
+										{
+											castlingmoves(rank, file, rank, file - 2, p_list, position);
+										}
 									}
 								}
 							}
@@ -987,10 +646,7 @@ void generatemoves(struct Board *position, struct Moves *p_list, enum Player pla
 			}
 		}
 	}
-	// position->board[0][0]->player = EMPTY;
-	// p_list->moveList[p_list->size].location_src->rank = EMPTY;
 }
-#include "structures.h"
 
 // takes in int rank and file from 0-7
 bool isLegal(struct Move* move, struct Moves *moves)
