@@ -35,7 +35,6 @@ test: $(TEST_TARGETS)
 # Clean target
 clean:
 	rm -f $(OBJECTS) bin/$(EXECUTABLE) $(TEST_OUTPUT)
-	rm -f $(LOG)/*
 	rm -f bin/test/*
 	rm test_1.o test_2.o
 

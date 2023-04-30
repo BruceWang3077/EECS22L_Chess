@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <dirent.h>
 enum PieceType
 {
     KING,
@@ -82,4 +82,5 @@ extern void recordMove(struct Move *move, enum Player curr_player, FILE *fp);
 extern void get_user_move(struct Move *move);
 extern int reload(FILE *log, struct Board *board);
 extern void print_move(struct Move* move);
+extern int print_files()
 #endif // CHESS_GAME_H

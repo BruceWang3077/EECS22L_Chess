@@ -1,6 +1,8 @@
 #include "structures.h"
 #include <time.h>
 #include <signal.h>
+
+
 #define MAXMOVES 300
 FILE *log_file;
 
@@ -27,8 +29,37 @@ void sigint_handler(int sig)
     exit(0);
 }
 // above for the test
+int print_files(){
+    DIR *folder;
+    struct dirent *entry;
+    int files = 0;
+
+    folder = opendir("bin/log");
+    if (folder == NULL)
+    {
+        perror("Unable to read directory");
+        return (1);
+    }
+
+    while ((entry = readdir(folder)))
+    {
+        
+        if (strcmp(entry->d_name, ".")==0 || strcmp(entry->d_name, "..")==0){
+            continue;
+        }
+        files++;
+        printf("History: %3d: %s\n",
+               files,
+               entry->d_name);
+    }
+
+    closedir(folder);
+
+    return (0);
+}
 int main()
 {
+    
     srand(time(NULL));
     int random_int;
     int mode;
@@ -90,7 +121,7 @@ int main()
         }
     }
 
-
+    print_files();
     printf("do you want to reload a game? (y/n):");
     scanf(" %c",&reload_option);
     getchar();
