@@ -1,6 +1,6 @@
 # Define variables
 CC = gcc
-CFLAGS = -std=c11 -Wall 
+CFLAGS = -std=c11 -Wall -g
 SRCDIR = src
 SOURCES = $(wildcard $(SRCDIR)/*.c)
 HEADERS = $(SRCDIR)/structures.h

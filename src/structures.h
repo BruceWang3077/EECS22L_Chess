@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
+#include <time.h>
+
 enum PieceType
 {
     KING,
@@ -79,7 +81,7 @@ extern void move_piece(struct Move *move, struct Board *board);
 extern void draw(struct Board *board);
 extern bool isLegal(struct Move *move, struct Moves *moves);
 extern void recordMove(struct Move *move, enum Player curr_player, FILE *fp);
-extern void get_user_move(struct Move *move);
+extern int get_user_move(struct Move *move);
 extern int reload(FILE *log, struct Board *board);
 extern void print_move(struct Move* move);
 extern int print_files()

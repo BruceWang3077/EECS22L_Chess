@@ -1,6 +1,8 @@
 #include "structures.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 
 int reload(FILE *log, struct Board* board){
     char start_char;
@@ -28,18 +30,29 @@ int reload(FILE *log, struct Board* board){
         move->location_src->rank = r1-'0';
         move->location_dest->file = f2-'0';
         move->location_dest->rank = r2 -'0';
+        move_piece(move,board);
+        // printf("reload: ");
+        // print_move(move)
     }
-    enum Player next=(start_char=='B')?BLACK:WHITE;
+    enum Player next=(start_char=='B')?WHITE:BLACK;
     board->current_player=next;
 
     fclose(log); // Close file
     return 0;
 }
-void get_user_move(struct Move *move)
+void sighandler(int signum)
 {
+    printf("time's up!\n");
+    //exit(1);
+}
+int get_user_move(struct Move *move)
+{   signal(SIGALRM,sighandler);
     printf("Enter your move (e.g. e2e4): ");
+    alarm(60);
     char input[10];
-    scanf("%s", input);
+    printf("You have 1 minute to input your move:\n");
+    scanf("%s",input);
+
     int src_file = input[0] - 'a';
     int src_rank = input[1] - '1';
     int dest_file = input[2] - 'a';
@@ -50,7 +63,9 @@ void get_user_move(struct Move *move)
     move->location_src->rank = src_rank;
     move->location_dest->file = dest_file;
     move->location_dest->rank = dest_rank;
+    return 0;
 }
+
 void initialize(struct Board *board)
 {   board->current_player=WHITE;
     for (int i = 0; i < 8; i++)
@@ -290,5 +305,5 @@ void recordMove(struct Move *move, enum Player curr_player, FILE *fp)
     int destrank = move->location_dest->rank;
     int destfile = move->location_dest->file;
     fprintf(fp, "%d%d%d%d \n", srcrank, srcfile, destrank, destfile);
-    printf("move Recorded\n");
+    //printf("move Recorded\n");
 }
