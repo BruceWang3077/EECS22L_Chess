@@ -1,6 +1,4 @@
 #include "structures.h"
-#include <time.h>
-#include <signal.h>
 #define MAXMOVES 300
 FILE *log_file;
 
@@ -20,12 +18,7 @@ bool isGameOver(struct Board *board)
     printf("run isGameOver()\n");
     return false;
 }
-void sigint_handler(int sig)
-{
-    fclose(log_file);
-    printf("File saved and closed.\n");
-    exit(0);
-}
+
 // above for the test
 int main()
 {
@@ -105,7 +98,7 @@ int main()
         printf("Error: failed to create log file.\n");
         exit(1);
     }
-    signal(SIGINT, sigint_handler);
+
 
     // test
     int count = 0;
@@ -166,7 +159,7 @@ int main()
             // generatemoves(my_board, p_list, computer_player);
             random_int = rand() % (p_list->size);
             computer_move = &(p_list->moveList[random_int]);
-            print_move(computer_move);
+            //print_move(computer_move);
             move_piece(computer_move, my_board);
             recordMove(computer_move, computer_player, log_file);
             my_board->current_player = human_player;
